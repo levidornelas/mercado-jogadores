@@ -4,6 +4,6 @@ Aplicação fullstack do estudo de caso SENAI/PE. O backend usa FastAPI e Postgr
 
 ## Estado atual
 
-A fundação do backend está pronta: configuração por ambiente, PostgreSQL em Docker, migrations Alembic, os modelos das tabelas obrigatórias, tratamento centralizado de erros, CORS restrito, logs de requisição e OpenAPI.
+A fundação do backend e o módulo de jogadores estão prontos: configuração por ambiente, PostgreSQL em Docker, migrations Alembic, modelos das tabelas obrigatórias, tratamento centralizado de erros, CORS restrito, logs, OpenAPI e o CRUD paginado de jogadores com regras de cálculo centralizadas.
 
 Consulte [backend/README.md](backend/README.md) para instalar, executar e recriar o banco de dados.

@@ -1,10 +1,10 @@
 # Backend — Mercado de Jogadores
 
-API REST construída com Python 3.12, FastAPI, SQLAlchemy 2, Alembic e PostgreSQL 16.
+API REST construída com Python 3.13, FastAPI, SQLAlchemy 2, Alembic e PostgreSQL 16.
 
 ## Pré-requisitos
 
-- Python 3.12 ou superior
+- Python 3.13
 - Docker Engine com Docker Compose v2
 
 ## Configuração local
@@ -24,7 +24,7 @@ docker compose up -d db
 No diretório `backend/`, crie e ative um ambiente virtual, instale as dependências e aplique a migration:
 
 ```bash
-python3.12 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env
@@ -38,6 +38,12 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 A API estará em `http://localhost:8000`, a documentação interativa em `http://localhost:8000/docs` e a rota de saúde em `http://localhost:8000/api/v1/health`.
+
+## Jogadores
+
+O módulo de jogadores está disponível em `/api/v1/players` e oferece cadastro, consulta individual, edição, alteração de condição, exclusão lógica e listagem paginada. A listagem aceita `search`, `position`, `condition`, `free`, `club_id`, `min_age`, `max_age`, `min_value`, `max_value`, `sort`, `page` e `limit`.
+
+Os cálculos de overall, valor base e valor de mercado estão centralizados em `app/services/calculos_jogador.py`.
 
 ## Banco de dados
 
