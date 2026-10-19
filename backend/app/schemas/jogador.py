@@ -4,25 +4,25 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from app.core.errors import DomainError
-from app.utils.texto import validar_nome_jogador
+from app.utils.texto import validate_player_name
 
 POSICOES = {"GOL", "ZAG", "LAT", "MEI", "ATA"}
 CONDICOES = {"APTO", "MAL_CONDICIONADO", "DOENTE"}
 
 
-def validar_inteiro(valor: Any) -> int:
-    if isinstance(valor, bool) or not isinstance(valor, int | float):
+def validate_integer(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise ValueError("deve ser um número inteiro")
-    if isinstance(valor, float) and not valor.is_integer():
+    if isinstance(value, float) and not value.is_integer():
         raise ValueError("deve ser um número inteiro")
-    return int(valor)
+    return int(value)
 
 
-class ModeloEntrada(BaseModel):
+class Base(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-class JogadorCriacao(ModeloEntrada):
+class JogadorCreate(Base):
     name: str
     position: str
     agility: int
@@ -46,27 +46,27 @@ class JogadorCriacao(ModeloEntrada):
         "physical",
         "potential",
         mode="before",
-    )(validar_inteiro)
+    )(validate_integer)
 
     @field_validator("name")
     @classmethod
-    def validar_nome(cls, valor: str) -> str:
-        if not isinstance(valor, str):
+    def validate_name(cls, value: str) -> str:
+        if not isinstance(value, str):
             raise ValueError("deve ser texto")
         try:
-            return validar_nome_jogador(valor)
-        except DomainError as erro:
-            raise ValueError(erro.message) from erro
+            return validate_player_name(value)
+        except DomainError as error:
+            raise ValueError(error.message) from error
 
     @field_validator("position")
     @classmethod
-    def validar_posicao(cls, valor: str) -> str:
-        if valor not in POSICOES:
+    def validate_position(cls, value: str) -> str:
+        if value not in POSICOES:
             raise ValueError("posição inválida")
-        return valor
+        return value
 
     @model_validator(mode="after")
-    def validar_regras_cruzadas(self) -> "JogadorCriacao":
+    def validate_cross_field_rules(self) -> "JogadorCreate":
         if not 1 <= self.agility <= 100:
             raise ValueError("agilidade deve estar entre 1 e 100")
         if not 16 <= self.age <= 45:
@@ -92,33 +92,33 @@ class JogadorCriacao(ModeloEntrada):
         return self
 
 
-class JogadorEdicao(ModeloEntrada):
+class JogadorUpdate(Base):
     name: str
     position: str
     agility: int
     age: int
 
-    _inteiros = field_validator("agility", "age", mode="before")(validar_inteiro)
+    _integers = field_validator("agility", "age", mode="before")(validate_integer)
 
     @field_validator("name")
     @classmethod
-    def validar_nome(cls, valor: str) -> str:
-        if not isinstance(valor, str):
+    def validate_name(cls, value: str) -> str:
+        if not isinstance(value, str):
             raise ValueError("deve ser texto")
         try:
-            return validar_nome_jogador(valor)
-        except DomainError as erro:
-            raise ValueError(erro.message) from erro
+            return validate_player_name(value)
+        except DomainError as error:
+            raise ValueError(error.message) from error
 
     @field_validator("position")
     @classmethod
-    def validar_posicao(cls, valor: str) -> str:
-        if valor not in POSICOES:
+    def validate_position(cls, value: str) -> str:
+        if value not in POSICOES:
             raise ValueError("posição inválida")
-        return valor
+        return value
 
     @model_validator(mode="after")
-    def validar_limites(self) -> "JogadorEdicao":
+    def validate_limits(self) -> "JogadorUpdate":
         if not 1 <= self.agility <= 100:
             raise ValueError("agilidade deve estar entre 1 e 100")
         if not 16 <= self.age <= 45:
@@ -128,18 +128,18 @@ class JogadorEdicao(ModeloEntrada):
         return self
 
 
-class CondicaoAtualizacao(ModeloEntrada):
+class CondicaoUpdate(Base):
     condition: str
 
     @field_validator("condition")
     @classmethod
-    def validar_condicao(cls, valor: str) -> str:
-        if valor not in CONDICOES:
+    def validate_condition(cls, value: str) -> str:
+        if value not in CONDICOES:
             raise ValueError("condição inválida")
-        return valor
+        return value
 
 
-class JogadorResposta(BaseModel):
+class JogadorResponse(BaseModel):
     model_config = ConfigDict(json_encoders={Decimal: float})
 
     id: int
@@ -161,13 +161,13 @@ class JogadorResposta(BaseModel):
     club_id: int | None
 
 
-class MetaPaginacao(BaseModel):
+class PaginationMeta(BaseModel):
     page: int
     limit: int
     total_items: int
     total_pages: int
 
 
-class ListaJogadoresResposta(BaseModel):
-    data: list[JogadorResposta]
-    meta: MetaPaginacao
+class JogadorListResponse(BaseModel):
+    data: list[JogadorResponse]
+    meta: PaginationMeta

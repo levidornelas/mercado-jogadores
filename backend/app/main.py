@@ -34,50 +34,54 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def registrar_requisicao(
-    requisicao: Request,
-    proximo: Callable[[Request], Awaitable[Response]],
+async def log_request(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
-    inicio = time.perf_counter()
-    resposta = await proximo(requisicao)
-    duracao_ms = (time.perf_counter() - inicio) * 1000
+    started_at = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - started_at) * 1000
     logger.info(
         "%s %s %s %.2fms",
-        requisicao.method,
-        requisicao.url.path,
-        resposta.status_code,
-        duracao_ms,
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
     )
-    return resposta
+    return response
 
 
 @app.exception_handler(RequestValidationError)
-async def tratar_erro_validacao(
-    _: Request, erro: RequestValidationError
+async def handle_validation_error(
+    _: Request, error: RequestValidationError
 ) -> JSONResponse:
-    mensagem = "Dados da requisição são inválidos."
-    if erro.errors():
-        localizacao = ".".join(
-            str(parte) for parte in erro.errors()[0]["loc"] if parte != "body"
+    message = "Dados da requisição são inválidos."
+    if error.errors():
+        location = ".".join(
+            str(part) for part in error.errors()[0]["loc"] if part != "body"
         )
-        mensagem = f"Campo inválido: {localizacao or 'corpo da requisição'}."
-    return JSONResponse(status_code=400, content={"message": mensagem})
+        message = f"Campo inválido: {location or 'corpo da requisição'}."
+    return JSONResponse(status_code=400, content={"message": message})
 
 
 @app.exception_handler(DomainError)
-async def tratar_erro_dominio(_: Request, erro: DomainError) -> JSONResponse:
-    return JSONResponse(status_code=erro.status_code, content={"message": erro.message})
+async def handle_domain_error(_: Request, error: DomainError) -> JSONResponse:
+    return JSONResponse(
+        status_code=error.status_code, content={"message": error.message}
+    )
 
 
 @app.exception_handler(StarletteHTTPException)
-async def tratar_erro_http(_: Request, erro: StarletteHTTPException) -> JSONResponse:
-    detalhe = erro.detail if isinstance(erro.detail, str) else "Recurso não encontrado."
-    return JSONResponse(status_code=erro.status_code, content={"message": detalhe})
+async def handle_http_error(_: Request, error: StarletteHTTPException) -> JSONResponse:
+    detail = (
+        error.detail if isinstance(error.detail, str) else "Recurso não encontrado."
+    )
+    return JSONResponse(status_code=error.status_code, content={"message": detail})
 
 
 @app.exception_handler(Exception)
-async def tratar_erro_inesperado(_: Request, erro: Exception) -> JSONResponse:
-    logger.exception("Erro inesperado ao processar requisição", exc_info=erro)
+async def handle_unexpected_error(_: Request, error: Exception) -> JSONResponse:
+    logger.exception("Erro inesperado ao processar requisição", exc_info=error)
     return JSONResponse(
         status_code=500,
         content={"message": "Ocorreu um erro interno ao processar a requisição."},

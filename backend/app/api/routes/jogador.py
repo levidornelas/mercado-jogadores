@@ -4,74 +4,74 @@ from sqlalchemy.orm import Session
 from app.core.database import get_session
 from app.core.errors import DomainError
 from app.schemas.jogador import (
-    CondicaoAtualizacao,
-    JogadorCriacao,
-    JogadorEdicao,
-    JogadorResposta,
-    ListaJogadoresResposta,
+    CondicaoUpdate,
+    JogadorCreate,
+    JogadorListResponse,
+    JogadorResponse,
+    JogadorUpdate,
 )
 from app.services.jogador import JogadorService
-from app.utils.texto import is_integer
+from app.utils.texto import is_positive_integer
 
 router = APIRouter(prefix="/players", tags=["jogadores"])
 jogador_service = JogadorService()
 
 
-def get_path_id(valor: str) -> int:
-    if not is_integer(valor) or int(valor) > 2_147_483_647:
+def get_path_id(value: str) -> int:
+    if not is_positive_integer(value) or int(value) > 2_147_483_647:
         raise DomainError("Jogador não encontrado.", 404)
-    return int(valor)
+    return int(value)
 
 
-@router.get("", response_model=ListaJogadoresResposta)
-def listar_jogadores(
-    requisicao: Request,
-    sessao: Session = Depends(get_session),
-) -> ListaJogadoresResposta:
-    return jogador_service.list(sessao, dict(requisicao.query_params))
+@router.get("", response_model=JogadorListResponse)
+def list_players(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> JogadorListResponse:
+    return jogador_service.list(session, dict(request.query_params))
 
 
-@router.post("", response_model=JogadorResposta, status_code=status.HTTP_201_CREATED)
-def criar_jogador(
-    dados: JogadorCriacao,
-    resposta: Response,
-    sessao: Session = Depends(get_session),
-) -> JogadorResposta:
-    jogador = jogador_service.create(sessao, dados)
-    resposta.headers["Location"] = f"/api/v1/players/{jogador.id}"
-    return jogador
+@router.post("", response_model=JogadorResponse, status_code=status.HTTP_201_CREATED)
+def create_player(
+    data: JogadorCreate,
+    response: Response,
+    session: Session = Depends(get_session),
+) -> JogadorResponse:
+    player = jogador_service.create(session, data)
+    response.headers["Location"] = f"/api/v1/players/{player.id}"
+    return player
 
 
-@router.patch("/{jogador_id}/condition", response_model=JogadorResposta)
-def atualizar_condicao(
+@router.patch("/{jogador_id}/condition", response_model=JogadorResponse)
+def update_condition(
     jogador_id: str,
-    dados: CondicaoAtualizacao,
-    sessao: Session = Depends(get_session),
-) -> JogadorResposta:
-    return jogador_service.update_condition(sessao, get_path_id(jogador_id), dados)
+    data: CondicaoUpdate,
+    session: Session = Depends(get_session),
+) -> JogadorResponse:
+    return jogador_service.update_condition(session, get_path_id(jogador_id), data)
 
 
-@router.put("/{jogador_id}", response_model=JogadorResposta)
-def editar_jogador(
+@router.put("/{jogador_id}", response_model=JogadorResponse)
+def update_player(
     jogador_id: str,
-    dados: JogadorEdicao,
-    sessao: Session = Depends(get_session),
-) -> JogadorResposta:
-    return jogador_service.update(sessao, get_path_id(jogador_id), dados)
+    data: JogadorUpdate,
+    session: Session = Depends(get_session),
+) -> JogadorResponse:
+    return jogador_service.update(session, get_path_id(jogador_id), data)
 
 
 @router.delete("/{jogador_id}", status_code=status.HTTP_204_NO_CONTENT)
-def excluir_jogador(
+def delete_player(
     jogador_id: str,
-    sessao: Session = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> Response:
-    jogador_service.delete(sessao, get_path_id(jogador_id))
+    jogador_service.delete(session, get_path_id(jogador_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{jogador_id}", response_model=JogadorResposta)
-def buscar_jogador(
+@router.get("/{jogador_id}", response_model=JogadorResponse)
+def find_player(
     jogador_id: str,
-    sessao: Session = Depends(get_session),
-) -> JogadorResposta:
-    return jogador_service.find(sessao, get_path_id(jogador_id))
+    session: Session = Depends(get_session),
+) -> JogadorResponse:
+    return jogador_service.find(session, get_path_id(jogador_id))

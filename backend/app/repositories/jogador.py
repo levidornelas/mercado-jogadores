@@ -5,35 +5,35 @@ from app.models import Clube, Escalacao, Jogador
 
 
 class JogadorRepository:
-    def list_active(self, sessao: Session) -> list[Jogador]:
-        consulta = select(Jogador).where(Jogador.excluido_em.is_(None))
-        return list(sessao.scalars(consulta))
+    def list_active(self, session: Session) -> list[Jogador]:
+        query = select(Jogador).where(Jogador.excluido_em.is_(None))
+        return list(session.scalars(query))
 
-    def find_active(self, sessao: Session, jogador_id: int) -> Jogador | None:
-        consulta = select(Jogador).where(
+    def find_active(self, session: Session, jogador_id: int) -> Jogador | None:
+        query = select(Jogador).where(
             Jogador.id == jogador_id,
             Jogador.excluido_em.is_(None),
         )
-        return sessao.scalar(consulta)
+        return session.scalar(query)
 
-    def club_exists(self, sessao: Session, clube_id: int) -> bool:
-        return sessao.get(Clube, clube_id) is not None
+    def club_exists(self, session: Session, clube_id: int) -> bool:
+        return session.get(Clube, clube_id) is not None
 
-    def create(self, sessao: Session, jogador: Jogador) -> Jogador:
-        sessao.add(jogador)
-        sessao.commit()
-        sessao.refresh(jogador)
-        return jogador
+    def create(self, session: Session, player: Jogador) -> Jogador:
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        return player
 
-    def save(self, sessao: Session, jogador: Jogador) -> Jogador:
-        sessao.add(jogador)
-        sessao.commit()
-        sessao.refresh(jogador)
-        return jogador
+    def save(self, session: Session, player: Jogador) -> Jogador:
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        return player
 
-    def remove_from_lineup(self, sessao: Session, jogador_id: int) -> None:
-        escalacao = sessao.scalar(
+    def remove_from_lineup(self, session: Session, jogador_id: int) -> None:
+        lineup = session.scalar(
             select(Escalacao).where(Escalacao.jogador_id == jogador_id)
         )
-        if escalacao is not None:
-            sessao.delete(escalacao)
+        if lineup is not None:
+            session.delete(lineup)

@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
 
-configuracoes = get_settings()
-mecanismo = create_engine(str(configuracoes.database_url), pool_pre_ping=True)
-FabricaSessoes = sessionmaker(bind=mecanismo, autocommit=False, autoflush=False)
+settings = get_settings()
+engine = create_engine(str(settings.database_url), pool_pre_ping=True)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
 def get_session() -> Generator[Session]:
-    session = FabricaSessoes()
+    session = SessionLocal()
     try:
         yield session
     finally:
