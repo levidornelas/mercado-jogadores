@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_session
 from app.core.errors import DomainError
 from app.schemas.clube import ClubeCreate, ClubeDetailResponse, ClubeResponse
+from app.schemas.mercado import TransactionListResponse
 from app.services.clube import ClubeService
+from app.services.mercado import MercadoService
 from app.utils.texto import is_positive_integer
 
 router = APIRouter(prefix="/clubs", tags=["clubes"])
 clube_service = ClubeService()
+mercado_service = MercadoService()
 
 
 def get_club_id(value: str) -> int:
@@ -40,3 +43,45 @@ def find_club(
     clube_id: str, session: Session = Depends(get_session)
 ) -> ClubeDetailResponse:
     return clube_service.find(session, get_club_id(clube_id))
+
+
+@router.get("/{clube_id}/transactions", response_model=TransactionListResponse)
+def list_transactions(
+    clube_id: str, request: Request, session: Session = Depends(get_session)
+) -> TransactionListResponse:
+    return mercado_service.list_transactions(
+        session, get_club_id(clube_id), dict(request.query_params)
+    )
+
+
+@router.get("/{clube_id}/transactions/export")
+def export_transactions(
+    clube_id: str, request: Request, session: Session = Depends(get_session)
+) -> Response:
+    result = mercado_service.list_transactions(
+        session, get_club_id(clube_id), dict(request.query_params)
+    )
+    lines = ["data_hora;tipo;jogador;valor;taxa_ou_comissao;multa;lucro;variacao_caixa"]
+    for item in result.data:
+        name = item.player_name.replace('"', '""')
+        if ";" in name or '"' in item.player_name:
+            name = f'"{name}"'
+
+        def money(value: object) -> str:
+            return "" if value is None else f"{value:.2f}".replace(".", ",")
+
+        lines.append(
+            ";".join(
+                [
+                    item.created_at,
+                    item.type,
+                    name,
+                    money(item.value),
+                    money(item.fee),
+                    money(item.penalty),
+                    money(item.profit),
+                    money(item.cash_change),
+                ]
+            )
+        )
+    return Response("\n".join(lines) + "\n", media_type="text/csv")

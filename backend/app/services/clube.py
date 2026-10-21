@@ -3,11 +3,13 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.core.errors import DomainError
-from app.models import Clube
+from app.models import Clube, Contrato
 from app.repositories.clube import ClubeRepository
 from app.schemas.clube import ClubeCreate, ClubeDetailResponse, ClubeResponse
 from app.services.calculos_jogador import calculate_market_value, round_currency
+from app.services.calculos_mercado import calculate_penalty
 from app.services.jogador import JogadorService
+from app.utils.datetime import format_brasilia, now_brasilia, remaining_days
 from app.utils.texto import alphabetical_key, normalize_text, remove_accents
 
 POSITION_ORDER = {"GOL": 0, "ZAG": 1, "LAT": 2, "MEI": 3, "ATA": 4}
@@ -66,13 +68,26 @@ class ClubeService:
                 player.id,
             )
         )
-        return ClubeDetailResponse(
-            **response.model_dump(),
-            players=[
-                self.player_service.to_response(player).model_dump(mode="json")
-                for player in players
-            ],
-        )
+        now = now_brasilia()
+        player_data = []
+        for player in players:
+            data = self.player_service.to_response(player).model_dump(mode="json")
+            contract = (
+                session.query(Contrato)
+                .filter_by(jogador_id=player.id, situacao="ATIVO")
+                .first()
+            )
+            if contract:
+                days = remaining_days(contract.fidelidade_ate, now)
+                rate, _ = calculate_penalty(data["market_value"], days)
+                data["contract"] = {
+                    "purchase_value": contract.valor_compra,
+                    "loyalty_until": format_brasilia(contract.fidelidade_ate),
+                    "remaining_days": days,
+                    "penalty_rate": rate,
+                }
+            player_data.append(data)
+        return ClubeDetailResponse(**response.model_dump(), players=player_data)
 
     def to_response(self, session: Session, club: Clube) -> ClubeResponse:
         squad_value = round_currency(

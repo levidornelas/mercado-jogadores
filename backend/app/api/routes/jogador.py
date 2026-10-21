@@ -10,11 +10,14 @@ from app.schemas.jogador import (
     JogadorResponse,
     JogadorUpdate,
 )
+from app.schemas.mercado import CompraCreate
 from app.services.jogador import JogadorService
+from app.services.mercado import MercadoService
 from app.utils.texto import is_positive_integer
 
 router = APIRouter(prefix="/players", tags=["jogadores"])
 jogador_service = JogadorService()
+mercado_service = MercadoService()
 
 
 def get_path_id(value: str) -> int:
@@ -75,3 +78,15 @@ def find_player(
     session: Session = Depends(get_session),
 ) -> JogadorResponse:
     return jogador_service.find(session, get_path_id(jogador_id))
+
+
+@router.post("/{jogador_id}/buy")
+def buy_player(
+    jogador_id: str, data: CompraCreate, session: Session = Depends(get_session)
+) -> dict:
+    return mercado_service.buy(session, get_path_id(jogador_id), data)
+
+
+@router.post("/{jogador_id}/sell")
+def sell_player(jogador_id: str, session: Session = Depends(get_session)) -> dict:
+    return mercado_service.sell(session, get_path_id(jogador_id))
