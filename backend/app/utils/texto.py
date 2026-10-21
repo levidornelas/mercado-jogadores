@@ -44,5 +44,23 @@ def validate_search(value: str) -> str:
     return normalized_search
 
 
+def validate_club_name(value: str) -> str:
+    normalized_name = normalize_text(value)
+    words = normalized_name.split(" ")
+    if not 3 <= len(normalized_name) <= 60 or not 2 <= len(words) <= 5:
+        raise DomainError("Nome de clube inválido.", 400)
+    if any(
+        not (character.isalpha() or character in " -.") for character in normalized_name
+    ):
+        raise DomainError("Nome de clube inválido.", 400)
+    return normalized_name
+
+
+def validate_club_acronym(value: str) -> str:
+    if not re.fullmatch(r"[A-Z]{3}", value):
+        raise DomainError("Sigla de clube inválida.", 400)
+    return value
+
+
 def is_positive_integer(value: str) -> bool:
     return bool(re.fullmatch(r"[1-9][0-9]*", value))
