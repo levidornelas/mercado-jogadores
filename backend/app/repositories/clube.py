@@ -1,7 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Clube, Jogador
+from app.models import Clube, Contrato, Jogador
 
 
 class ClubeRepository:
@@ -26,6 +26,17 @@ class ClubeRepository:
             Jogador.excluido_em.is_(None),
         )
         return list(session.scalars(query))
+
+    def active_contracts(
+        self, session: Session, jogador_ids: list[int]
+    ) -> dict[int, Contrato]:
+        if not jogador_ids:
+            return {}
+        query = select(Contrato).where(
+            Contrato.jogador_id.in_(jogador_ids),
+            Contrato.situacao == "ATIVO",
+        )
+        return {contract.jogador_id: contract for contract in session.scalars(query)}
 
     def create(self, session: Session, club: Clube) -> Clube:
         session.add(club)

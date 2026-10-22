@@ -45,6 +45,21 @@ O módulo de jogadores está disponível em `/api/v1/players` e oferece cadastro
 
 Os cálculos de overall, valor base e valor de mercado estão centralizados em `app/services/calculos_jogador.py`.
 
+## Clubes, mercado e liga
+
+- `/api/v1/clubs` cria e lista clubes; o detalhe inclui elenco e contrato ativo.
+- `/api/v1/players/{id}/buy` e `/api/v1/players/{id}/sell` executam compra e
+  venda em transacao unica. O historico e o CSV ficam em
+  `/api/v1/clubs/{id}/transactions` e
+  `/api/v1/clubs/{id}/transactions/export`.
+- `/api/v1/clubs/{id}/lineup` grava ou consulta a escalacao;
+  `/api/v1/matches` joga e lista partidas; `/api/v1/standings` traz a
+  classificacao calculada.
+
+Datas usam o horario fixo de Brasilia (`-03:00`). Valores derivados, como
+mercado, multa, patrimonio, placar e classificacao, sao calculados no momento
+da operacao ou da consulta e nao sao armazenados como colunas calculadas.
+
 ## Banco de dados
 
 As migrations versionadas em `alembic/versions/` criam as sete tabelas obrigatórias: `jogadores`, `clubes`, `contratos`, `transacoes`, `escalacoes`, `partidas` e `duelos_partida`.

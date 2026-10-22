@@ -3,7 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.core.errors import DomainError
-from app.models import Clube, Contrato
+from app.models import Clube
 from app.repositories.clube import ClubeRepository
 from app.schemas.clube import ClubeCreate, ClubeDetailResponse, ClubeResponse
 from app.services.calculos_jogador import calculate_market_value, round_currency
@@ -53,8 +53,9 @@ class ClubeService:
         responses.sort(key=lambda item: (alphabetical_key(item.name), item.id))
         return sorted(
             responses,
-            key=lambda item: item.net_worth,
-            reverse=sort == "net_worth_desc",
+            key=lambda item: (
+                -item.net_worth if sort == "net_worth_desc" else item.net_worth
+            ),
         )
 
     def find(self, session: Session, clube_id: int) -> ClubeDetailResponse:
@@ -69,14 +70,13 @@ class ClubeService:
             )
         )
         now = now_brasilia()
+        contracts = self.repository.active_contracts(
+            session, [player.id for player in players]
+        )
         player_data = []
         for player in players:
             data = self.player_service.to_response(player).model_dump(mode="json")
-            contract = (
-                session.query(Contrato)
-                .filter_by(jogador_id=player.id, situacao="ATIVO")
-                .first()
-            )
+            contract = contracts.get(player.id)
             if contract:
                 days = remaining_days(contract.fidelidade_ate, now)
                 rate, _ = calculate_penalty(data["market_value"], days)
