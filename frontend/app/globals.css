@@ -94,7 +94,14 @@ body {
   position: absolute;
   pointer-events: none;
   border: 1.5px solid var(--line);
-  z-index: -1;
+  z-index: 0;
+}
+.brand,
+.hero,
+.steps,
+footer {
+  position: relative;
+  z-index: 1;
 }
 .midline {
   border-width: 0 0 0 1.5px !important;
@@ -121,6 +128,35 @@ body {
 }
 .right-box {
   right: 0;
+  border-right: 0 !important;
+}
+.left-small-box,
+.right-small-box {
+  width: 72px;
+  height: 126px;
+  top: 339px;
+}
+.left-small-box {
+  left: 0;
+  border-left: 0 !important;
+}
+.right-small-box {
+  right: 0;
+  border-right: 0 !important;
+}
+.left-arc,
+.right-arc {
+  width: 108px;
+  height: 184px;
+  top: 310px;
+  border-radius: 100%;
+}
+.left-arc {
+  left: 138px;
+  border-left: 0 !important;
+}
+.right-arc {
+  right: 138px;
   border-right: 0 !important;
 }
 .left-goal,
@@ -196,7 +232,7 @@ h1 {
   font-weight: 700;
 }
 .subtitle {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 16px;
   line-height: 24px;
   margin: 16px 0 22px;

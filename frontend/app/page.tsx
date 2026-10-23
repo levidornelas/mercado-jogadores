@@ -63,6 +63,10 @@ export default function Home() {
           <span className="center-circle" />
           <span className="left-box" />
           <span className="right-box" />
+          <span className="left-small-box" />
+          <span className="right-small-box" />
+          <span className="left-arc" />
+          <span className="right-arc" />
           <span className="left-goal" />
           <span className="right-goal" />
           <span className="left-dot" />
