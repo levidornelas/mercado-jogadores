@@ -62,30 +62,42 @@ export default function StandingsPage() {
         <span>Liga</span>
         <ChevronRight size={14} />
         <b>Classificação</b>
-        <button onClick={() => void load()} aria-label="Atualizar classificação">
+        <button
+          onClick={() => void load()}
+          aria-label="Atualizar classificação"
+        >
           <RefreshCw size={17} />
         </button>
       </div>
 
       <header className="screen-header standings-header">
         <div className="screen-title">
-          <span className="title-icon"><LayoutList /></span>
+          <span className="title-icon">
+            <LayoutList />
+          </span>
           <div>
             <h1>Classificação</h1>
             <p>Todos jogam. 3 pontos por vitória e 1 por empate.</p>
           </div>
         </div>
-        <Link href="/matches" className="ui-button ui-button-outline standings-new-match">
+        <Link
+          href="/matches"
+          className="ui-button ui-button-outline standings-new-match"
+        >
           <Plus size={16} /> Nova partida
         </Link>
       </header>
 
       {loading ? (
-        <div className="table-state standings-state">Carregando classificação...</div>
+        <div className="table-state standings-state">
+          Carregando classificação...
+        </div>
       ) : error ? (
         <div className="table-state error-state standings-state">
           {error}
-          <Button variant="outline" onClick={() => void load()}>Tentar novamente</Button>
+          <Button variant="outline" onClick={() => void load()}>
+            Tentar novamente
+          </Button>
         </div>
       ) : (
         <div className="standings-layout">
@@ -108,10 +120,26 @@ export default function StandingsPage() {
               <tbody>
                 {standings.map((row) => (
                   <tr key={row.club_id}>
-                    <td><span className={row.position === 1 ? "standing-position leader" : "standing-position"}>{row.position}</span></td>
                     <td>
-                      <Link href={`/clubs/${row.club_id}`} className="standing-club">
-                        <i>{acronymByClub.get(row.club_id) ?? row.club_name.slice(0, 3).toUpperCase()}</i>
+                      <span
+                        className={
+                          row.position === 1
+                            ? "standing-position leader"
+                            : "standing-position"
+                        }
+                      >
+                        {row.position}
+                      </span>
+                    </td>
+                    <td>
+                      <Link
+                        href={`/clubs/${row.club_id}`}
+                        className="standing-club"
+                      >
+                        <i>
+                          {acronymByClub.get(row.club_id) ??
+                            row.club_name.slice(0, 3).toUpperCase()}
+                        </i>
                         <b>{row.club_name}</b>
                       </Link>
                     </td>
@@ -122,13 +150,16 @@ export default function StandingsPage() {
                     <td>{row.goals_for}</td>
                     <td>{row.goals_against}</td>
                     <td>{signed(row.goal_difference)}</td>
-                    <td><strong>{row.points}</strong></td>
+                    <td>
+                      <strong>{row.points}</strong>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <footer className="standings-legend">
-              J: jogos · V: vitórias · E: empates · D: derrotas · GP: gols marcados · GC: gols sofridos · SG: saldo de gols · Pts: pontos
+              J: jogos · V: vitórias · E: empates · D: derrotas · GP: gols
+              marcados · GC: gols sofridos · SG: saldo de gols · Pts: pontos
             </footer>
           </section>
 
@@ -143,18 +174,27 @@ export default function StandingsPage() {
                   <small>{dateTimeBr(match.played_at)}</small>
                   <p>
                     <b>{match.home.club_name}</b>
-                    <strong>{match.home.goals} × {match.away.goals}</strong>
+                    <strong>
+                      {match.home.goals} × {match.away.goals}
+                    </strong>
                     <b>{match.away.club_name}</b>
                   </p>
                 </article>
               ))}
-              {!matches.length && <p className="recent-empty">Nenhuma partida jogada ainda.</p>}
-              <Link href="/matches">Ver todas as partidas <ChevronRight size={13} /></Link>
+              {!matches.length && (
+                <p className="recent-empty">Nenhuma partida jogada ainda.</p>
+              )}
+              <Link href="/matches">
+                Ver todas as partidas <ChevronRight size={13} />
+              </Link>
             </section>
             <section className="card standings-order-card">
               <header>
                 <ClipboardList size={14} />
-                <div><h2>Ordem da tabela</h2><p>Critérios de classificação, nesta ordem.</p></div>
+                <div>
+                  <h2>Ordem da tabela</h2>
+                  <p>Critérios de classificação, nesta ordem.</p>
+                </div>
               </header>
               <ol>
                 <li>Mais pontos</li>
@@ -167,7 +207,9 @@ export default function StandingsPage() {
         </div>
       )}
       <p className="screen-note standings-note">
-        Classificação de 1 a {standings.length}, com os clubes sem partidas zerados. Pontos, saldo e posição são calculados a cada consulta, nunca gravados.
+        Classificação de 1 a {standings.length}, com os clubes sem partidas
+        zerados. Pontos, saldo e posição são calculados a cada consulta, nunca
+        gravados.
       </p>
     </section>
   );

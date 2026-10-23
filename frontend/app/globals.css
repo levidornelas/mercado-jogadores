@@ -2872,6 +2872,70 @@ footer {
 .standings-state { min-height: 230px; }
 @media (max-width: 820px) { .standings-layout { grid-template-columns: 1fr; }.standings-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }.standings-note { margin-top: 24px; } }
 @media (max-width: 620px) { .standings-header .standings-new-match { width: auto; font-size: 0; }.standings-header .standings-new-match svg { width: 17px; height: 17px; }.standings-table-card { overflow-x: auto; }.standings-table { min-width: 590px; }.standings-side { grid-template-columns: 1fr; } }
+
+/* Partidas da liga. */
+.matches-header { padding-bottom: 18px; }
+.matches-state { min-height: 250px; }
+.latest-match { overflow: hidden; margin-bottom: 18px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); box-shadow: var(--shadow-xs); }
+.latest-match > header { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; font-weight: 500; }
+.latest-match-body { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: center; gap: 18px; min-height: 96px; padding: 16px 22px; }
+.match-team { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.match-team.right { justify-content: flex-end; text-align: right; }
+.match-team i { display: grid; flex: 0 0 auto; width: 31px; height: 31px; place-items: center; border: 1px solid var(--border); border-radius: 7px; background: var(--muted-subtle); color: var(--foreground); font-size: 9px; font-style: normal; font-weight: 700; }
+.match-team > span { display: grid; min-width: 0; gap: 3px; }
+.match-team b { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.match-team small { color: var(--muted-foreground); font-size: 10px; }
+.latest-score { display: grid; justify-items: center; gap: 4px; }
+.latest-score strong { padding: 5px 9px; border-radius: 6px; background: var(--muted); color: var(--foreground); font-size: 16px; line-height: 1; }
+.latest-score small { color: var(--muted-foreground); font-size: 9px; }
+.latest-score span { color: var(--muted-foreground); font-size: 9px; }
+.latest-match-body > .ui-button { min-height: 33px; padding: 0 10px; font-size: 11px; }
+.latest-match-body > .ui-button svg { width: 13px; height: 13px; }
+.latest-match-empty { display: grid; min-height: 120px; place-items: center; align-content: center; gap: 8px; color: var(--muted-foreground); }
+.latest-match-empty > svg { width: 22px; height: 22px; }
+.latest-match-empty p { margin: 0; font-size: 12px; }
+.latest-match-empty .ui-button { min-height: 32px; font-size: 11px; }
+.matches-history { overflow: hidden; }
+.matches-history > header { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 14px 16px 11px; border-bottom: 1px solid var(--border); }
+.matches-history h2 { margin: 0; font-size: 14px; }
+.matches-history header p { margin: 3px 0 0; color: var(--muted-foreground); font-size: 10px; }
+.matches-club-filter { width: 180px; min-height: 34px; font-size: 11px; }
+.matches-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.matches-table th { height: 39px; padding: 0 16px; border-bottom: 1px solid var(--border); color: var(--muted-foreground); background: var(--muted-subtle); font-size: 10px; font-weight: 500; text-align: left; }
+.matches-table td { height: 51px; padding: 7px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.matches-table tbody tr:last-child td { border-bottom: 0; }
+.match-team.compact { gap: 7px; }
+.match-team.compact i { width: 23px; height: 23px; border-radius: 5px; font-size: 7px; }
+.match-team.compact b { font-size: 12px; }
+.match-score { display: inline-flex; align-items: center; min-height: 23px; padding: 0 7px; border-radius: 5px; background: var(--muted); font-size: 11px; font-weight: 600; }
+.match-result { display: inline-flex; padding: 3px 7px; border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--foreground); background: var(--muted-subtle); font-size: 10px; }
+.matches-table .ui-button { min-height: 30px; padding: 0 7px; font-size: 10px; }
+.matches-table .ui-button svg { width: 13px; height: 13px; }
+.matches-empty { padding: 40px; color: var(--muted-foreground); text-align: center; font-size: 12px; }
+.matches-note { margin-top: 18px; }
+.match-create-dialog { width: min(600px, calc(100% - 32px)); padding: 24px; }
+.match-create-dialog > header { margin-bottom: 7px; }
+.match-create-dialog > header h2 { font-size: 18px; }
+.match-dialog-copy { margin: 0 0 16px; color: var(--muted-foreground); font-size: 12px; line-height: 1.4; }
+.match-form { display: grid; gap: 14px; }
+.match-form > label { display: grid; gap: 6px; color: var(--foreground); font-size: 12px; font-weight: 600; }
+.match-form > label > small { color: var(--muted-foreground); font-size: 10px; font-weight: 400; }
+.match-club-select { min-height: 38px; padding: 0 11px; font-size: 12px; }
+.match-club-select > svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.match-club-select > svg:last-child { margin-left: auto; }
+.match-form-error { display: flex; gap: 8px; margin-bottom: 16px; padding: 12px; border: 1px solid var(--destructive-soft-border); border-radius: var(--radius-md); color: var(--destructive-soft-foreground); background: var(--destructive-soft); font-size: 11px; line-height: 1.35; }
+.match-form-error > svg { flex: 0 0 auto; width: 15px; height: 15px; }
+.match-form-error b { display: block; font-size: 12px; }
+.match-form-error p { margin: 3px 0 0; }
+.match-rules, .match-saving { display: flex; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--muted-foreground); background: var(--muted-subtle); font-size: 10px; line-height: 1.4; }
+.match-rules > svg, .match-saving > svg { flex: 0 0 auto; width: 14px; height: 14px; }
+.match-rules p { margin: 0; }
+.match-rules b { display: block; margin-bottom: 3px; color: var(--foreground); font-size: 11px; }
+.match-form .dialog-actions { margin-top: 2px; }
+.match-form .ui-button { min-height: 38px; padding: 0 13px; font-size: 12px; }
+.match-form .ui-button svg { width: 14px; height: 14px; }
+@media (max-width: 760px) { .latest-match-body { grid-template-columns: 1fr auto; gap: 12px; }.latest-match-body > .match-team:nth-of-type(2) { grid-column: 1 / -1; grid-row: 2; justify-content: center; text-align: center; }.latest-match-body > .ui-button { grid-column: 1 / -1; }.matches-history > header { align-items: flex-start; flex-direction: column; }.matches-club-filter { width: 100%; } }
+@media (max-width: 620px) { .matches-table { min-width: 750px; }.matches-history .table-wrap { overflow-x: auto; } }
 @media (max-width: 640px) {
   .club-controls {
     align-items: flex-start;
