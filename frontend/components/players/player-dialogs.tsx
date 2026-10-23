@@ -4,11 +4,17 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
+  CalendarDays,
   CheckCircle2,
   Circle,
+  Clock3,
   Eye,
   HeartPulse,
+  Handshake,
+  Info,
   Pencil,
+  RefreshCw,
+  Shield,
   ShoppingCart,
   Tag,
   TrendingUp,
@@ -23,6 +29,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, ApiError } from "@/lib/api";
 import { money } from "@/lib/utils";
 import type {
@@ -726,71 +739,413 @@ export function BuyPlayerDialog({
   player,
   clubs,
   onClose,
-  onSuccess,
+  onCompleted,
 }: {
   player: Player;
   clubs: Club[];
   onClose: () => void;
-  onSuccess: Success;
+  onCompleted: () => void;
 }) {
+  type PurchaseResult = Transaction & {
+    contract: {
+      purchase_value: number;
+      loyalty_until: string;
+      status: "ATIVO";
+    };
+  };
+
+  const initialDate = new Date();
+  initialDate.setFullYear(initialDate.getFullYear() + 1);
+  const [clubId, setClubId] = useState("");
+  const [loyaltyDate, setLoyaltyDate] = useState(
+    initialDate.toISOString().slice(0, 10),
+  );
+  const [loyaltyTime, setLoyaltyTime] = useState("15:00");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<PurchaseResult | null>(null);
+  const fee = player.market_value > 30 ? player.market_value * 0.05 : 0;
+  const totalCost = player.market_value + fee;
+  const selectedClub = clubs.find((club) => club.id === Number(clubId));
+  const canAfford = (club: Club) => totalCost <= club.cash / 2;
+  const dateIsValid = () => {
+    const value = new Date(`${loyaltyDate}T${loyaltyTime}-03:00`);
+    const now = new Date();
+    const limit = new Date();
+    limit.setDate(limit.getDate() + 1095);
+    return value > now && value <= limit;
+  };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError(null);
+    if (!selectedClub) {
+      setError("Escolha o clube comprador para continuar.");
+      return;
+    }
+    if (!canAfford(selectedClub)) {
+      setError("Este clube não possui caixa suficiente para esta compra.");
+      return;
+    }
+    if (!dateIsValid()) {
+      setError("Informe uma fidelidade futura de até 1.095 dias.");
+      return;
+    }
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    const rawDate = String(form.get("loyalty_until"));
     try {
-      const result = await api<Transaction>(`/players/${player.id}/buy`, {
+      const response = await api<PurchaseResult>(`/players/${player.id}/buy`, {
         method: "POST",
         body: JSON.stringify({
-          club_id: Number(form.get("club_id")),
-          loyalty_until: `${rawDate}:00-03:00`,
+          club_id: selectedClub.id,
+          loyalty_until: `${loyaltyDate}T${loyaltyTime}-03:00`,
         }),
       });
-      onSuccess(
-        `${player.name} foi comprado por ${money(result.value)}. Caixa atual: ${money(result.club_cash)}.`,
-      );
+      setResult(response);
+      onCompleted();
     } catch (cause) {
-      alert(
+      setError(
         cause instanceof ApiError
           ? cause.message
-          : "Não foi possível concluir a compra.",
+          : "A compra não foi confirmada. Verifique a conexão e tente de novo.",
       );
     } finally {
       setSaving(false);
     }
   };
+
+  if (result && selectedClub) {
+    return (
+      <Dialog title="Compra concluída" onClose={onClose} className="purchase-dialog">
+        <div className="purchase-success-heading">
+          <CheckCircle2 aria-hidden="true" />
+          <p>{player.name} agora é do {selectedClub.name}.</p>
+        </div>
+        <div className="purchase-success-card">
+          <PurchaseResultRow
+            label="Valor"
+            hint="Valor de mercado no momento da compra"
+            value={money(result.value)}
+          />
+          <PurchaseResultRow
+            label="Taxa"
+            hint={result.fee ? "5% do valor, porque passa de 30,00" : "Sem taxa para valores até 30,00"}
+            value={money(result.fee)}
+          />
+          <PurchaseResultRow
+            label="Custo total"
+            hint="Valor + taxa"
+            value={money(result.value + result.fee)}
+            strong
+          />
+          <PurchaseResultRow
+            label="Fim da fidelidade"
+            value={formatContractDate(result.contract.loyalty_until)}
+          />
+          <PurchaseResultRow
+            label="Contrato"
+            value={<span className="purchase-active">● ATIVO</span>}
+          />
+          <PurchaseResultRow
+            label={`Novo caixa do ${selectedClub.name}`}
+            value={money(result.club_cash)}
+            strong
+          />
+        </div>
+        <div className="dialog-actions purchase-success-actions">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => {
+              window.location.assign(`/clubs/${selectedClub.id}`);
+            }}
+          >
+            Ver clube →
+          </Button>
+          <Button type="button" onClick={onClose}>Fechar</Button>
+        </div>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog title={`Comprar ${player.name}`} onClose={onClose}>
-      <p className="dialog-copy">
-        O valor de mercado atual é <b>{money(player.market_value)}</b>. A taxa e
-        o custo final serão confirmados pela API.
+    <Dialog
+      title="Comprar jogador"
+      onClose={saving ? () => undefined : onClose}
+      className="purchase-dialog"
+    >
+      <p className="purchase-dialog-copy">
+        Escolha o clube comprador e até quando vai a fidelidade do contrato.
       </p>
-      <form className="player-form" onSubmit={submit}>
+      {error && (
+        <div className="purchase-error" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <div>
+            <b>{error.includes("conexão") ? "Sem conexão" : "Não foi possível confirmar"}</b>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+      <article className="purchase-player-summary">
+        <span className={`avatar avatar-${player.id % 4}`}>
+          {player.name.split(" ").slice(0, 2).map((name) => name[0]).join("")}
+        </span>
+        <div>
+          <b>{player.name}</b>
+          <small>{player.position} · {positionLabel[player.position]} · {player.age} anos</small>
+        </div>
+        <div>
+          <small>Valor de mercado</small>
+          <strong>{money(player.market_value)}</strong>
+        </div>
+      </article>
+      <form className="purchase-form" onSubmit={submit}>
         <label>
-          Clube
-          <select name="club_id" required>
-            <option value="">Selecione o clube</option>
-            {clubs.map((club) => (
-              <option value={club.id} key={club.id}>
-                {club.name}
-              </option>
-            ))}
-          </select>
+          Clube comprador
+          <Select value={clubId || undefined} onValueChange={setClubId}>
+            <SelectTrigger className="purchase-club-select">
+              <Shield aria-hidden="true" />
+              <SelectValue placeholder="Selecione o clube" />
+            </SelectTrigger>
+            <SelectContent>
+              {clubs.map((club) => (
+                <SelectItem
+                  value={String(club.id)}
+                  key={club.id}
+                  disabled={!canAfford(club)}
+                >
+                  {club.name} ({club.acronym}) · caixa {money(club.cash)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <small>
+            {selectedClub
+              ? `Caixa atual: ${money(selectedClub.cash)}. Custo total: ${money(totalCost)}.`
+              : `Custo estimado: ${money(totalCost)}. O clube só pode usar até 50% do caixa.`}
+          </small>
         </label>
-        <label>
-          Fim da fidelidade
-          <Input name="loyalty_until" type="datetime-local" required />
-        </label>
+        <fieldset>
+          <legend>Fim da fidelidade</legend>
+          <div className="purchase-date-fields">
+            <label>
+              <CalendarDays aria-hidden="true" />
+              <Input
+                type="date"
+                value={loyaltyDate}
+                onChange={(event) => setLoyaltyDate(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              <Clock3 aria-hidden="true" />
+              <Input
+                type="time"
+                value={loyaltyTime}
+                onChange={(event) => setLoyaltyTime(event.target.value)}
+                required
+              />
+            </label>
+          </div>
+          <small>
+            Depois do momento da compra e até 1.095 dias. Horário de Brasília;
+            enviado com o fuso (-03:00).
+          </small>
+        </fieldset>
+        <aside className="purchase-info">
+          <Info aria-hidden="true" />
+          A taxa é de 5% do valor de mercado, só quando ele passa de 30,00.
+          Taxa, custo e novo caixa são calculados ao confirmar.
+        </aside>
+        {saving && (
+          <aside className="purchase-waiting">
+            <Info aria-hidden="true" />
+            Enviando a compra. Os botões ficam desabilitados até a resposta.
+          </aside>
+        )}
         <div className="dialog-actions">
-          <Button variant="secondary" type="button" onClick={onClose}>
+          <Button variant="outline" type="button" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
-          <Button disabled={saving}>
-            {saving ? "Comprando..." : "Confirmar compra"}
+          <Button disabled={saving || !clubId}>
+            {saving ? <><RefreshCw className="purchase-spin" aria-hidden="true" /> Comprando...</> : <><ShoppingCart aria-hidden="true" /> Confirmar compra</>}
           </Button>
         </div>
       </form>
+    </Dialog>
+  );
+}
+
+function PurchaseResultRow({
+  label,
+  hint,
+  value,
+  strong = false,
+}: {
+  label: string;
+  hint?: string;
+  value: ReactNode;
+  strong?: boolean;
+}) {
+  return (
+    <div className={strong ? "purchase-result-strong" : ""}>
+      <span>
+        <b>{label}</b>
+        {hint && <small>{hint}</small>}
+      </span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function formatContractDate(value: string) {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date).replace(",", ",");
+}
+
+export function SellPlayerDialog({
+  player,
+  club,
+  isStarter,
+  onClose,
+  onCompleted,
+  onViewHistory,
+}: {
+  player: Player;
+  club: Club;
+  isStarter: boolean;
+  onClose: () => void;
+  onCompleted: () => void;
+  onViewHistory: () => void;
+}) {
+  type SaleResult = Transaction & {
+    purchase_value: number;
+    remaining_days: number;
+    penalty_rate: number;
+    contract_status: "RESCINDIDO" | "ENCERRADO";
+  };
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<SaleResult | null>(null);
+  const contract = player.contract;
+  const finishSale = async () => {
+    setError(null);
+    setSaving(true);
+    try {
+      const response = await api<SaleResult>(`/players/${player.id}/sell`, {
+        method: "POST",
+      });
+      setResult(response);
+      onCompleted();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "A venda não foi confirmada. Verifique a conexão e tente de novo.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (result) {
+    const status = result.contract_status === "RESCINDIDO" ? "RESCINDIDO" : "ENCERRADO";
+    return (
+      <Dialog title="Venda concluída" onClose={onClose} className="purchase-dialog sale-dialog">
+        <div className="purchase-success-heading">
+          <CheckCircle2 aria-hidden="true" />
+          <p>{player.name} voltou a ficar livre e saiu da escalação.</p>
+        </div>
+        <div className="purchase-success-card sale-success-card">
+          <PurchaseResultRow label="Valor de compra" value={money(result.purchase_value)} />
+          <PurchaseResultRow label="Valor de venda" hint="Valor de mercado no momento da venda" value={money(result.value)} />
+          <PurchaseResultRow label="Dias restantes" value={String(result.remaining_days)} />
+          <PurchaseResultRow label="Multa" hint={`${result.penalty_rate}% do valor de venda, com teto de 10,00`} value={money(result.penalty)} />
+          <PurchaseResultRow label="Lucro" value={<span className={result.profit && result.profit >= 0 ? "sale-positive" : ""}>{result.profit === null ? "—" : `${result.profit >= 0 ? "+" : "−"}${money(Math.abs(result.profit))}`}</span>} />
+          <PurchaseResultRow label="Comissão" hint="10% do lucro até 10,00 + 20% do que passar" value={money(result.fee)} />
+          <PurchaseResultRow label="Crédito no caixa" hint="Valor de venda − multa − comissão" value={`${result.cash_change >= 0 ? "+" : "−"}${money(Math.abs(result.cash_change))}`} strong />
+          <PurchaseResultRow label="Contrato" value={<span className={`sale-contract ${status.toLowerCase()}`}>● {status}</span>} />
+          <PurchaseResultRow label={`Novo caixa do ${club.name}`} value={money(result.club_cash)} strong />
+        </div>
+        <div className="dialog-actions purchase-success-actions">
+          <Button variant="outline" type="button" onClick={onViewHistory}>
+            <Handshake aria-hidden="true" /> Ver histórico
+          </Button>
+          <Button type="button" onClick={onClose}>Fechar</Button>
+        </div>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog
+      title={`Vender ${player.name}?`}
+      onClose={saving ? () => undefined : onClose}
+      className="purchase-dialog sale-dialog"
+    >
+      <p className="purchase-dialog-copy">
+        O jogador sai do elenco do {club.name} e volta a ficar livre.
+      </p>
+      {error && (
+        <div className="purchase-error" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <div>
+            <b>{error.includes("conexão") ? "Sem conexão" : "A venda foi recusada"}</b>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+      {isStarter && (
+        <aside className="sale-starter-warning">
+          <AlertTriangle aria-hidden="true" />
+          <div>
+            <b>{player.name} é titular</b>
+            <p>Ao vender, ele sai da escalação, e o {club.name} só volta a jogar partidas depois de escalar de novo os 5 titulares.</p>
+          </div>
+        </aside>
+      )}
+      <article className="purchase-player-summary">
+        <span className={`avatar avatar-${player.id % 4}`}>
+          {player.name.split(" ").slice(0, 2).map((name) => name[0]).join("")}
+        </span>
+        <div>
+          <b>{player.name}</b>
+          <small>{player.position} · {positionLabel[player.position]} · {player.age} anos</small>
+        </div>
+        <div>
+          <small>Valor de mercado</small>
+          <strong>{money(player.market_value)}</strong>
+        </div>
+      </article>
+      <div className="sale-contract-preview">
+        <PurchaseResultRow label="Valor de compra" value={money(contract?.purchase_value)} />
+        <PurchaseResultRow label="Fim da fidelidade" value={contract ? formatContractDate(contract.loyalty_until) : "—"} />
+        <PurchaseResultRow label="Dias restantes" value={String(contract?.remaining_days ?? 0)} />
+        <PurchaseResultRow label="% de multa se vender agora" value={<span className="sale-rate">{contract?.penalty_rate ?? 0}%</span>} />
+      </div>
+      <aside className="purchase-info">
+        <Info aria-hidden="true" />
+        A venda é pelo valor de mercado do momento. Multa (teto de 10,00), lucro, comissão e crédito são calculados ao confirmar.
+      </aside>
+      {saving && (
+        <aside className="purchase-waiting">
+          <Info aria-hidden="true" />
+          Enviando a venda. Os botões ficam desabilitados até a resposta.
+        </aside>
+      )}
+      <div className="dialog-actions sale-actions">
+        <Button variant="outline" type="button" onClick={onClose} disabled={saving}>Cancelar</Button>
+        <Button type="button" onClick={finishSale} disabled={saving}>
+          {saving ? <><RefreshCw className="purchase-spin" aria-hidden="true" /> Vendendo...</> : <><Handshake aria-hidden="true" /> Confirmar venda</>}
+        </Button>
+      </div>
     </Dialog>
   );
 }

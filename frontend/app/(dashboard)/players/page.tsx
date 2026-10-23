@@ -11,6 +11,7 @@ import {
   Trash2,
   UsersRound,
   X,
+  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -175,7 +176,7 @@ export default function PlayersPage() {
         <span>▣</span>
         <i />
         <span>Mercado</span>
-        <ChevronDown size={14} />
+        <ChevronRight size={14} />
         <b>Jogadores</b>
         <button onClick={() => void load()} aria-label="Atualizar">
           <RefreshCw size={17} />
@@ -368,7 +369,7 @@ export default function PlayersPage() {
           player={selected}
           clubs={clubs}
           onClose={() => setModal(null)}
-          onSuccess={onSuccess}
+          onCompleted={() => void load()}
         />
       )}
       {modal === "condition" && selected && (
@@ -401,11 +402,17 @@ export default function PlayersPage() {
         >
           <div className="confirm-player">
             <span className={`avatar avatar-${selected.id % 4}`}>
-              {selected.name.split(" ").slice(0, 2).map((name) => name[0]).join("")}
+              {selected.name
+                .split(" ")
+                .slice(0, 2)
+                .map((name) => name[0])
+                .join("")}
             </span>
             <span>
               <b>{selected.name}</b>
-              <small>{selected.position} · {selected.age} anos</small>
+              <small>
+                {selected.position} · {selected.age} anos
+              </small>
             </span>
             <em>{selected.club_id ? "Em clube" : "Livre"}</em>
           </div>

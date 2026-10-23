@@ -19,6 +19,12 @@ export type Player = {
   potential: number;
   overall: number;
   club_id: number | null;
+  contract?: {
+    purchase_value: number;
+    loyalty_until: string;
+    remaining_days: number;
+    penalty_rate: number;
+  };
 };
 
 export type PlayerList = {
@@ -35,8 +41,21 @@ export type Club = {
   net_worth: number;
 };
 
+export type ClubDetail = Club & {
+  players: Player[];
+};
+
+export type Lineup = {
+  club_id: number;
+  formation: "3-1" | "2-2" | "2-1-1" | "1-2-1" | null;
+  complete: boolean;
+  players: Player[];
+};
+
 export type Transaction = {
   id: number;
+  club_id: number;
+  player_id: number;
   value: number;
   fee: number;
   penalty: number;
@@ -44,4 +63,17 @@ export type Transaction = {
   cash_change: number;
   club_cash: number;
   player_name: string;
+  type: "COMPRA" | "VENDA";
+  created_at: string;
+};
+
+export type TransactionList = {
+  data: Transaction[];
+  summary: {
+    total_spent: number;
+    total_received: number;
+    total_fees: number;
+    total_penalties: number;
+    total_profit: number;
+  };
 };
