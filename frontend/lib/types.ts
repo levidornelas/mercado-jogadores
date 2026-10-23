@@ -109,3 +109,24 @@ export type Match = {
   };
   result: "MANDANTE" | "VISITANTE" | "EMPATE";
 };
+
+export type MatchDuelPlayer = {
+  player_id: number;
+  player_name: string;
+  position: PlayerPosition;
+  condition: PlayerCondition;
+  attribute: "shooting" | "passing" | "dribbling" | "defending";
+  value: number;
+};
+
+export type MatchDuel = {
+  order: number;
+  attacking_club_id: number;
+  attacker: MatchDuelPlayer;
+  defender: MatchDuelPlayer;
+  goal: boolean;
+};
+
+export type MatchDetail = Match & {
+  duels: MatchDuel[];
+};

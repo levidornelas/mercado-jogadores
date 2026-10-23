@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Goal, Plus, RefreshCw, Swords } from "lucide-react";
 
 import { MatchCreateDialog } from "@/components/matches/match-create-dialog";
@@ -17,13 +19,13 @@ import { dateTimeBr } from "@/lib/utils";
 import type { Club, Match } from "@/lib/types";
 
 export default function MatchesPage() {
+  const router = useRouter();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [clubFilter, setClubFilter] = useState("all");
-  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,11 +51,6 @@ export default function MatchesPage() {
   useEffect(() => {
     void load();
   }, [load]);
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 4000);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   const filteredMatches = useMemo(
     () =>
@@ -192,24 +189,9 @@ export default function MatchesPage() {
           onClose={() => setCreating(false)}
           onPlayed={(match) => {
             setCreating(false);
-            setToast(
-              `${match.home.club_name} ${match.home.goals} × ${match.away.goals} ${match.away.club_name}`,
-            );
-            void load();
+            router.push(`/matches/${match.id}?played=1`);
           }}
         />
-      )}
-      {toast && (
-        <div className="toast matches-toast" role="status">
-          <Swords size={16} />
-          <span>
-            <b>Partida concluída</b>
-            <small>{toast}</small>
-          </span>
-          <button onClick={() => setToast(null)} aria-label="Fechar">
-            ×
-          </button>
-        </div>
       )}
     </section>
   );
@@ -236,13 +218,13 @@ function LatestMatch({
         <small>{dateTimeBr(match.played_at)}</small>
         <span>{resultLabel(match)}</span>
       </div>
-      <Team
-        club={match.away}
-        acronym={acronymByClub.get(match.away.club_id)}
-      />
-      <Button variant="outline" disabled>
+      <Team club={match.away} acronym={acronymByClub.get(match.away.club_id)} />
+      <Link
+        href={`/matches/${match.id}`}
+        className="ui-button ui-button-outline latest-duel-link"
+      >
         Ver duelos <ChevronRight size={14} />
-      </Button>
+      </Link>
     </div>
   );
 }
@@ -280,9 +262,12 @@ function MatchRow({
         <span className="match-result">{resultLabel(match)}</span>
       </td>
       <td>
-        <Button variant="ghost" disabled>
+        <Link
+          href={`/matches/${match.id}`}
+          className="ui-button ui-button-ghost match-duel-link"
+        >
           Ver duelos <ChevronRight size={13} />
-        </Button>
+        </Link>
       </td>
     </tr>
   );

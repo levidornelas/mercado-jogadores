@@ -13,3 +13,4 @@ frontend/dist/
 frontend/tsconfig.tsbuildinfo
 postgres-data/
 desafio-isi-dev-1/
+backend/mercado_jogadores.db

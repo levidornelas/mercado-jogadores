@@ -79,7 +79,8 @@ class ClubeService:
             contract = contracts.get(player.id)
             if contract:
                 days = remaining_days(contract.fidelidade_ate, now)
-                rate, _ = calculate_penalty(data["market_value"], days)
+                market_value = Decimal(str(data["market_value"]))
+                rate, _ = calculate_penalty(market_value, days)
                 data["contract"] = {
                     "purchase_value": contract.valor_compra,
                     "loyalty_until": format_brasilia(contract.fidelidade_ate),

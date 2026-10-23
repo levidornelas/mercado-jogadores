@@ -1,10 +1,10 @@
 # Backend — Mercado de Jogadores
 
-API REST construída com Python 3.13, FastAPI, SQLAlchemy 2, Alembic e PostgreSQL 16.
+API REST construída com Python 3.14, FastAPI, SQLAlchemy 2, Alembic e PostgreSQL 16.
 
 ## Pré-requisitos
 
-- Python 3.13
+- Python 3.14
 - Docker Engine com Docker Compose v2
 
 ## Configuração local
@@ -24,7 +24,7 @@ docker compose up -d db
 No diretório `backend/`, crie e ative um ambiente virtual, instale as dependências e aplique a migration:
 
 ```bash
-python3.13 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env
