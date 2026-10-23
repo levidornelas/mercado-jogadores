@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   ArrowRight,
   CircleCheck,
@@ -12,6 +13,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import brandMark from "../assets/Marca.png";
 
@@ -55,6 +57,18 @@ const steps = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const startWithKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && event.target === document.body) {
+        router.push("/players");
+      }
+    };
+    window.addEventListener("keydown", startWithKeyboard);
+    return () => window.removeEventListener("keydown", startWithKeyboard);
+  }, [router]);
+
   return (
     <main className="landing">
       <section className="pitch-shell" aria-labelledby="hero-title">
@@ -91,7 +105,7 @@ export default function Home() {
             partidas com placar calculado pelos atributos.
           </p>
           <div className="start-row">
-            <a className="start-button" href="#etapas">
+            <a className="start-button" href="/players">
               Iniciar <ArrowRight size={18} strokeWidth={2.25} />
             </a>
             <span>
