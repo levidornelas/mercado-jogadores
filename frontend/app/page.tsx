@@ -11,6 +11,9 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import Image from "next/image";
+
+import brandMark from "../assets/Marca.png";
 
 const steps = [
   {
@@ -67,9 +70,7 @@ export default function Home() {
         </div>
 
         <header className="brand" aria-label="Passe">
-          <span className="brand-mark">
-            p<span>•</span>
-          </span>
+          <Image className="brand-mark" src={brandMark} alt="" priority />
           <span>Passe</span>
         </header>
 
