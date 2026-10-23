@@ -10,7 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { ListState } from "@/components/ui/list-state";
 import { api, ApiError } from "@/lib/api";
 import { dateTimeBr } from "@/lib/utils";
 import type { Club, Match, Standing } from "@/lib/types";
@@ -89,16 +89,27 @@ export default function StandingsPage() {
       </header>
 
       {loading ? (
-        <div className="table-state standings-state">
-          Carregando classificação...
-        </div>
+        <ListState
+          status="loading"
+          description="Carregando classificação..."
+          className="standings-state"
+        />
       ) : error ? (
-        <div className="table-state error-state standings-state">
-          {error}
-          <Button variant="outline" onClick={() => void load()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListState
+          status="error"
+          title="Não foi possível carregar a classificação"
+          description={error}
+          onAction={() => void load()}
+          className="standings-state"
+        />
+      ) : !standings.length ? (
+        <section className="standings-table-card card">
+          <ListState
+            status="empty"
+            title="Nenhum clube cadastrado"
+            description="A classificação mostra todos os clubes, mesmo os que ainda não jogaram."
+          />
+        </section>
       ) : (
         <div className="standings-layout">
           <section className="standings-table-card card">

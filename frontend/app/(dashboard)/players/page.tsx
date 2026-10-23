@@ -23,9 +23,14 @@ import {
   PlayerDetailsDialog,
 } from "@/components/players/player-dialogs";
 import { PlayerRow } from "@/components/players/player-row";
+import {
+  ActiveFilters,
+  type ActiveFilter,
+} from "@/components/ui/active-filters";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import { ListState } from "@/components/ui/list-state";
 import {
   Select,
   SelectContent,
@@ -35,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { api, ApiError, query } from "@/lib/api";
 import type { Club, Player, PlayerList } from "@/lib/types";
+import { money } from "@/lib/utils";
 
 type Filters = {
   search: string;
@@ -142,6 +148,84 @@ export default function PlayersPage() {
 
   const setFilter = (patch: Partial<Filters>) =>
     setFilters((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
+  const activeFilters = useMemo<ActiveFilter[]>(() => {
+    const items: ActiveFilter[] = [];
+    const conditionLabels: Record<string, string> = {
+      APTO: "Apto",
+      MAL_CONDICIONADO: "Mal condicionado",
+      DOENTE: "Doente",
+    };
+
+    if (filters.search) {
+      items.push({
+        id: "search",
+        label: "Busca: " + filters.search,
+        onRemove: () => setFilter({ search: "" }),
+      });
+    }
+    if (filters.position) {
+      items.push({
+        id: "position",
+        label: "Posição: " + filters.position,
+        onRemove: () => setFilter({ position: "" }),
+      });
+    }
+    if (filters.condition) {
+      items.push({
+        id: "condition",
+        label: "Condição: " + conditionLabels[filters.condition],
+        onRemove: () => setFilter({ condition: "" }),
+      });
+    }
+    if (filters.club_id) {
+      const club = clubs.find((item) => item.id === Number(filters.club_id));
+      items.push({
+        id: "club",
+        label: "Clube: " + (club?.name ?? filters.club_id),
+        onRemove: () => setFilter({ club_id: "" }),
+      });
+    }
+    if (filters.age) {
+      const [minimum, maximum] = filters.age.split("-");
+      items.push({
+        id: "age",
+        label: "Idade: " + minimum + " a " + maximum,
+        onRemove: () => setFilter({ age: "" }),
+      });
+    }
+    if (filters.value) {
+      const [minimum, maximum] = filters.value.split("-");
+      items.push({
+        id: "value",
+        label:
+          "Valor de mercado: " +
+          money(Number(minimum)) +
+          " a " +
+          money(Number(maximum)),
+        onRemove: () => setFilter({ value: "" }),
+      });
+    }
+    if (filters.tab === "free") {
+      items.push({
+        id: "availability",
+        label: "Disponibilidade: Livres",
+        onRemove: () => setFilter({ tab: "all" }),
+      });
+    }
+    if (filters.tab === "club") {
+      items.push({
+        id: "availability",
+        label: "Disponibilidade: Em clubes",
+        onRemove: () => setFilter({ tab: "all" }),
+      });
+    }
+    return items;
+  }, [clubs, filters]);
+  const clearFilters = () =>
+    setFilters((current) => ({
+      ...initialFilters,
+      sort: current.sort,
+    }));
   const clubById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club])),
     [clubs],
@@ -243,6 +327,7 @@ export default function PlayersPage() {
           options={["0-30", "30-50", "50-550"]}
         />
       </div>
+      <ActiveFilters filters={activeFilters} onClear={clearFilters} />
       <div className="players-card card">
         <div className="player-controls">
           <div className="tabs">
@@ -254,7 +339,7 @@ export default function PlayersPage() {
             </button>
             <button
               className={filters.tab === "free" ? "active" : ""}
-              onClick={() => setFilter({ tab: "free" })}
+              onClick={() => setFilter({ tab: "free", club_id: "" })}
             >
               Livres <span>{counts.free}</span>
             </button>
@@ -287,14 +372,14 @@ export default function PlayersPage() {
           </Select>
         </div>
         {loading ? (
-          <div className="table-state">Carregando jogadores...</div>
+          <ListState status="loading" description="Carregando jogadores..." />
         ) : error ? (
-          <div className="table-state error-state">
-            {error}
-            <Button variant="outline" onClick={() => void load()}>
-              Tentar novamente
-            </Button>
-          </div>
+          <ListState
+            status="error"
+            title="Não foi possível carregar os jogadores"
+            description={error}
+            onAction={() => void load()}
+          />
         ) : players?.data.length ? (
           <div className="table-wrap">
             <table className="players-table">
@@ -331,9 +416,21 @@ export default function PlayersPage() {
             </table>
           </div>
         ) : (
-          <div className="table-state">
-            Nenhum jogador encontrado com estes filtros.
-          </div>
+          <ListState
+            status="empty"
+            title={
+              counts.all
+                ? "Nenhum jogador encontrado"
+                : "Nenhum jogador cadastrado"
+            }
+            description={
+              counts.all
+                ? "Ajuste ou limpe os filtros para encontrar jogadores."
+                : "Com o banco recém-criado, a lista começa vazia."
+            }
+            actionLabel={counts.all ? undefined : "Novo jogador"}
+            onAction={counts.all ? undefined : () => open("create")}
+          />
         )}
         <Pagination
           meta={players?.meta}

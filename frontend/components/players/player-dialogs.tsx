@@ -47,18 +47,19 @@ import type {
 } from "@/lib/types";
 
 type Success = (title: string, description?: string) => void;
+type NumericDraftValue = number | "";
 type CreateDraft = {
   name: string;
-  position: PlayerPosition;
-  age: number;
-  agility: number;
-  pace: number;
-  shooting: number;
-  passing: number;
-  dribbling: number;
-  defending: number;
-  physical: number;
-  potential: number;
+  position: PlayerPosition | "";
+  age: NumericDraftValue;
+  agility: NumericDraftValue;
+  pace: NumericDraftValue;
+  shooting: NumericDraftValue;
+  passing: NumericDraftValue;
+  dribbling: NumericDraftValue;
+  defending: NumericDraftValue;
+  physical: NumericDraftValue;
+  potential: NumericDraftValue;
 };
 const technicalFields = [
   ["pace", "Velocidade"],
@@ -82,17 +83,17 @@ export function PlayerCreateDialog({
 }) {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<CreateDraft>({
-    name: "Davi Melo",
-    position: "MEI",
-    age: 25,
-    agility: 70,
-    pace: 66,
-    shooting: 62,
-    passing: 74,
-    dribbling: 70,
-    defending: 48,
-    physical: 58,
-    potential: 82,
+    name: "",
+    position: "",
+    age: "",
+    agility: "",
+    pace: "",
+    shooting: "",
+    passing: "",
+    dribbling: "",
+    defending: "",
+    physical: "",
+    potential: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof CreateDraft, string>>
@@ -100,33 +101,53 @@ export function PlayerCreateDialog({
   const setNumber = (
     field: Exclude<keyof CreateDraft, "name" | "position">,
     value: string,
-  ) => setDraft((current) => ({ ...current, [field]: Number(value) }));
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      [field]: value === "" ? "" : Number(value),
+    }));
   const validate = () => {
     const next: Partial<Record<keyof CreateDraft, string>> = {};
-    if (draft.name.trim().length < 3 || draft.name.trim().length > 100) {
+    const normalizedName = draft.name.trim().replace(/\s+/g, " ");
+    const nameWords = normalizedName.split(" ").filter(Boolean);
+    if (normalizedName.length < 3 || normalizedName.length > 100) {
       next.name = "Use de 3 a 100 caracteres.";
+    } else if (
+      nameWords.length < 2 ||
+      nameWords.some((word) => !/\p{L}/u.test(word))
+    ) {
+      next.name = "Use pelo menos duas palavras com letras.";
+    } else if (/\p{N}/u.test(normalizedName)) {
+      next.name = "O nome não pode conter números.";
     }
-    if (draft.age < 16 || draft.age > 45) {
+    if (!draft.position) {
+      next.position = "Escolha a posição.";
+    }
+    const age = Number(draft.age);
+    const agility = Number(draft.agility);
+    const potential = Number(draft.potential);
+    if (age < 16 || age > 45) {
       next.age = "Use uma idade de 16 a 45 anos.";
     }
-    if (draft.agility < 1 || draft.agility > 100) {
+    if (agility < 1 || agility > 100) {
       next.agility = "Use um valor de 1 a 100.";
-    } else if (draft.age >= 35 && draft.agility > 85) {
+    } else if (age >= 35 && agility > 85) {
       next.agility = "Use até 85 a partir de 35 anos.";
     }
     technicalFields.forEach(([field]) => {
-      if (draft[field] < 1 || draft[field] > 99) {
+      const value = Number(draft[field]);
+      if (value < 1 || value > 99) {
         next[field] = "Use um valor de 1 a 99.";
       }
     });
-    const attributes = technicalFields.map(([field]) => draft[field]);
+    const attributes = technicalFields.map(([field]) => Number(draft[field]));
     if (attributes.reduce((total, value) => total + value, 0) > 480) {
       next.potential = "A soma dos atributos não pode passar de 480.";
-    } else if (draft.potential < 1 || draft.potential > 99) {
+    } else if (potential < 1 || potential > 99) {
       next.potential = "Informe o potencial.";
-    } else if (draft.potential < Math.max(...attributes)) {
+    } else if (potential < Math.max(...attributes)) {
       next.potential = "Deve ser maior que os atributos.";
-    } else if (draft.age >= 33 && draft.potential !== Math.max(...attributes)) {
+    } else if (age >= 33 && potential !== Math.max(...attributes)) {
       next.potential = "Deve ser igual ao maior atributo a partir de 33 anos.";
     }
     setErrors(next);
@@ -139,7 +160,19 @@ export function PlayerCreateDialog({
     try {
       const player = await api<Player>("/players", {
         method: "POST",
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          position: draft.position as PlayerPosition,
+          age: Number(draft.age),
+          agility: Number(draft.agility),
+          pace: Number(draft.pace),
+          shooting: Number(draft.shooting),
+          passing: Number(draft.passing),
+          dribbling: Number(draft.dribbling),
+          defending: Number(draft.defending),
+          physical: Number(draft.physical),
+          potential: Number(draft.potential),
+        }),
       });
       onCreated(player);
     } catch (cause) {
@@ -198,6 +231,7 @@ export function PlayerCreateDialog({
             ))}
           </div>
         </fieldset>
+        {errors.position && <FieldError message={errors.position} />}
         <div className="create-primary-grid">
           <label>
             Idade
@@ -284,13 +318,13 @@ export function PlayerCreateDialog({
                 <div key={field}>
                   <small>{label}</small>
                   <i>
-                    <b style={{ width: `${draft[field]}%` }} />
+                    <b style={{ width: `${Number(draft[field])}%` }} />
                   </i>
-                  <em>{draft[field]}</em>
+                  <em>{draft[field] || "—"}</em>
                 </div>
               ))}
               <p>
-                Faixa clara: até o potencial ({draft.potential}). A prévia só
+                Faixa clara: até o potencial ({draft.potential || "—"}). A prévia só
                 desenha os valores digitados, não calcula overall nem valor
                 base.
               </p>
@@ -764,8 +798,9 @@ export function BuyPlayerDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PurchaseResult | null>(null);
-  const fee = player.market_value > 30 ? player.market_value * 0.05 : 0;
-  const totalCost = player.market_value + fee;
+  const marketValue = Number(player.market_value);
+  const fee = marketValue > 30 ? marketValue * 0.05 : 0;
+  const totalCost = marketValue + fee;
   const selectedClub = clubs.find((club) => club.id === Number(clubId));
   const canAfford = (club: Club) => totalCost <= club.cash / 2;
   const dateIsValid = () => {
@@ -833,7 +868,7 @@ export function BuyPlayerDialog({
           <PurchaseResultRow
             label="Custo total"
             hint="Valor + taxa"
-            value={money(result.value + result.fee)}
+            value={money(Number(result.value) + Number(result.fee))}
             strong
           />
           <PurchaseResultRow

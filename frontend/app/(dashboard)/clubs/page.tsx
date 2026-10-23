@@ -14,6 +14,7 @@ import {
 
 import { ClubCreateDialog } from "@/components/clubs/club-dialogs";
 import { Button } from "@/components/ui/button";
+import { ListState } from "@/components/ui/list-state";
 import {
   Select,
   SelectContent,
@@ -122,15 +123,15 @@ export default function ClubsPage() {
           </Select>
         </div>
         {loading ? (
-          <div className="table-state">Carregando clubes...</div>
+          <ListState status="loading" description="Carregando clubes..." />
         ) : error ? (
-          <div className="table-state error-state">
-            {error}
-            <Button variant="outline" onClick={() => void load()}>
-              Tentar novamente
-            </Button>
-          </div>
-        ) : (
+          <ListState
+            status="error"
+            title="Não foi possível carregar os clubes"
+            description={error}
+            onAction={() => void load()}
+          />
+        ) : clubs.length ? (
           <div className="table-wrap">
             <table className="clubs-table">
               <thead>
@@ -173,6 +174,14 @@ export default function ClubsPage() {
               </tbody>
             </table>
           </div>
+        ) : (
+          <ListState
+            status="empty"
+            title="Nenhum clube cadastrado"
+            description="Crie o primeiro clube para começar."
+            actionLabel="Novo clube"
+            onAction={() => setCreating(true)}
+          />
         )}
       </div>
       <p className="screen-note">

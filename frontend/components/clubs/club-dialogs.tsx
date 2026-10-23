@@ -39,8 +39,8 @@ export function ClubCreateDialog({
   onCreated: (club: Club) => void;
 }) {
   const [draft, setDraft] = useState<Draft>({
-    name: "Leões da Serra",
-    acronym: "LDS",
+    name: "",
+    acronym: "",
   });
   const [errors, setErrors] = useState<Errors>({});
   const [apiError, setApiError] = useState<string | null>(null);

@@ -24,8 +24,8 @@ export function MatchCreateDialog({
   onClose: () => void;
   onPlayed: (match: Match) => void;
 }) {
-  const [homeId, setHomeId] = useState(String(clubs[0]?.id ?? ""));
-  const [awayId, setAwayId] = useState(String(clubs[1]?.id ?? ""));
+  const [homeId, setHomeId] = useState("");
+  const [awayId, setAwayId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

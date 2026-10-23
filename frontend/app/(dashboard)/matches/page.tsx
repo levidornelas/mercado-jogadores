@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Goal, Plus, RefreshCw, Swords } from "lucide-react";
 
 import { MatchCreateDialog } from "@/components/matches/match-create-dialog";
+import {
+  ActiveFilters,
+  type ActiveFilter,
+} from "@/components/ui/active-filters";
 import { Button } from "@/components/ui/button";
+import { ListState } from "@/components/ui/list-state";
 import {
   Select,
   SelectContent,
@@ -68,6 +73,22 @@ export default function MatchesPage() {
     [clubs],
   );
   const latest = matches[0];
+  const activeFilters = useMemo<ActiveFilter[]>(
+    () =>
+      clubFilter === "all"
+        ? []
+        : [
+            {
+              id: "club",
+              label:
+                "Clube: " +
+                (clubs.find((club) => club.id === Number(clubFilter))?.name ??
+                  clubFilter),
+              onRemove: () => setClubFilter("all"),
+            },
+          ],
+    [clubFilter, clubs],
+  );
 
   return (
     <section className="screen matches-screen">
@@ -100,14 +121,29 @@ export default function MatchesPage() {
       </header>
 
       {loading ? (
-        <div className="table-state matches-state">Carregando partidas...</div>
+        <ListState
+          status="loading"
+          description="Carregando partidas..."
+          className="matches-state"
+        />
       ) : error ? (
-        <div className="table-state error-state matches-state">
-          {error}
-          <Button variant="outline" onClick={() => void load()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListState
+          status="error"
+          title="Não foi possível carregar as partidas"
+          description={error}
+          onAction={() => void load()}
+          className="matches-state"
+        />
+      ) : !matches.length ? (
+        <section className="matches-history card">
+          <ListState
+            status="empty"
+            title="Nenhuma partida jogada"
+            description="Escolha os titulares de dois clubes e jogue a primeira partida."
+            actionLabel="Nova partida"
+            onAction={() => setCreating(true)}
+          />
+        </section>
       ) : (
         <>
           <section className="latest-match">
@@ -145,6 +181,10 @@ export default function MatchesPage() {
                 </SelectContent>
               </Select>
             </header>
+            <ActiveFilters
+              filters={activeFilters}
+              onClear={() => setClubFilter("all")}
+            />
             {filteredMatches.length ? (
               <div className="table-wrap">
                 <table className="matches-table">

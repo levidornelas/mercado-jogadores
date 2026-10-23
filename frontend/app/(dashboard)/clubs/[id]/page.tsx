@@ -28,12 +28,17 @@ import {
   X,
 } from "lucide-react";
 
-import formation31 from "../../../../assets/Formação=3-1.svg";
-import formation22 from "../../../../assets/Formação=2-2.svg";
-import formation211 from "../../../../assets/Formação=2-1-1.svg";
-import formation121 from "../../../../assets/Formação=1-2-1.svg";
+import formation31 from "../../../../assets/formacao_3_1.svg";
+import formation22 from "../../../../assets/formacao_2_2.svg";
+import formation211 from "../../../../assets/formacao_2_1_1.svg";
+import formation121 from "../../../../assets/formacao_1_2_1.svg";
 import { SellPlayerDialog } from "@/components/players/player-dialogs";
+import {
+  ActiveFilters,
+  type ActiveFilter,
+} from "@/components/ui/active-filters";
 import { Button } from "@/components/ui/button";
+import { ListState } from "@/components/ui/list-state";
 import {
   Select,
   SelectContent,
@@ -133,6 +138,7 @@ export default function ClubDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sellPlayer, setSellPlayer] = useState<Player | null>(null);
+  const [saleCompleted, setSaleCompleted] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -174,18 +180,18 @@ export default function ClubDetailPage() {
   if (loading)
     return (
       <section className="screen">
-        <div className="table-state">Carregando clube...</div>
+        <ListState status="loading" description="Carregando elenco..." />
       </section>
     );
   if (error || !club)
     return (
       <section className="screen">
-        <div className="table-state error-state">
-          {error ?? "Clube não encontrado."}
-          <Button variant="outline" onClick={() => void load()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListState
+          status="error"
+          title="Não foi possível carregar o elenco"
+          description={error ?? "Clube não encontrado."}
+          onAction={() => void load()}
+        />
       </section>
     );
 
@@ -291,11 +297,18 @@ export default function ClubDetailPage() {
           player={sellPlayer}
           club={club}
           isStarter={selectedIds.has(sellPlayer.id)}
-          onClose={() => setSellPlayer(null)}
-          onCompleted={() => void load()}
+          onClose={() => {
+            const shouldRefresh = saleCompleted;
+            setSellPlayer(null);
+            setSaleCompleted(false);
+            if (shouldRefresh) void load();
+          }}
+          onCompleted={() => setSaleCompleted(true)}
           onViewHistory={() => {
             setSellPlayer(null);
+            setSaleCompleted(false);
             setTab("history");
+            void load();
           }}
         />
       )}
@@ -365,6 +378,7 @@ function SquadTab({
           </p>
         </div>
       </header>
+      {players.length ? (
       <div className="table-wrap">
         <table className="club-squad-table">
           <thead>
@@ -429,11 +443,15 @@ function SquadTab({
           </tbody>
         </table>
       </div>
-      {!players.length && (
-        <div className="empty-club-state">
-          Este clube ainda não possui jogadores. Compre jogadores livres para
-          montar o elenco.
-        </div>
+      ) : (
+        <ListState
+          status="empty"
+          title="O clube ainda não tem jogadores"
+          description="Compre jogadores livres para formar o elenco."
+          actionLabel="Comprar jogadores"
+          actionHref="/players?free=true"
+          className="club-list-state"
+        />
       )}
     </section>
   );
@@ -712,6 +730,35 @@ function HistoryTab({
       ),
     [data],
   );
+  const activeFilters = useMemo<ActiveFilter[]>(() => {
+    const items: ActiveFilter[] = [];
+    if (types.COMPRA !== types.VENDA) {
+      items.push({
+        id: "type",
+        label: "Tipo: " + (types.COMPRA ? "Compra" : "Venda"),
+        onRemove: () => setTypes({ COMPRA: true, VENDA: true }),
+      });
+    }
+    if (playerId !== "all") {
+      const player = players.find(([id]) => id === Number(playerId));
+      items.push({
+        id: "player",
+        label: "Jogador: " + (player?.[1] ?? playerId),
+        onRemove: () => setPlayerId("all"),
+      });
+    }
+    return items;
+  }, [playerId, players, types]);
+  const clearFilters = () => {
+    setTypes({ COMPRA: true, VENDA: true });
+    setPlayerId("all");
+  };
+  const toggleType = (type: "COMPRA" | "VENDA") =>
+    setTypes((current) => {
+      const other = type === "COMPRA" ? "VENDA" : "COMPRA";
+      if (current[type] && !current[other]) return current;
+      return { ...current, [type]: !current[type] };
+    });
   const filteredData = data.filter(
     (item) =>
       types[item.type] &&
@@ -783,9 +830,7 @@ function HistoryTab({
           variant="outline"
           className={types.COMPRA ? "history-filter-active" : ""}
           aria-pressed={types.COMPRA}
-          onClick={() =>
-            setTypes((current) => ({ ...current, COMPRA: !current.COMPRA }))
-          }
+          onClick={() => toggleType("COMPRA")}
         >
           <ShoppingCart aria-hidden="true" /> Compra
         </Button>
@@ -793,9 +838,7 @@ function HistoryTab({
           variant="outline"
           className={types.VENDA ? "history-filter-active" : ""}
           aria-pressed={types.VENDA}
-          onClick={() =>
-            setTypes((current) => ({ ...current, VENDA: !current.VENDA }))
-          }
+          onClick={() => toggleType("VENDA")}
         >
           <Handshake aria-hidden="true" /> Venda
         </Button>
@@ -814,6 +857,8 @@ function HistoryTab({
           </SelectContent>
         </Select>
       </div>
+      <ActiveFilters filters={activeFilters} onClear={clearFilters} />
+      {filteredData.length ? (
       <div className="table-wrap">
         <table className="history-table">
           <thead>
@@ -867,17 +912,26 @@ function HistoryTab({
                 </td>
               </tr>
             ))}
-            {!filteredData.length && (
-              <tr>
-                <td colSpan={8} className="history-empty">
-                  Nenhuma transação encontrada com estes filtros.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
-      <div className="history-summary">
+      ) : (
+        <ListState
+          status="empty"
+          title={
+            data.length
+              ? "Nenhuma transação encontrada"
+              : "Nenhuma compra ou venda"
+          }
+          description={
+            data.length
+              ? "Altere os filtros para encontrar outra transação."
+              : "As compras e vendas do clube aparecem aqui, com os totais."
+          }
+          className="history-list-state"
+        />
+      )}
+      {filteredData.length > 0 && <div className="history-summary">
         <Summary
           label="Total pago em compras"
           value={money(summary.total_spent)}
@@ -889,7 +943,7 @@ function HistoryTab({
         <Summary label="Taxas e comissões" value={money(summary.total_fees)} />
         <Summary label="Multas" value={money(summary.total_penalties)} />
         <Summary label="Lucro total" value={money(summary.total_profit)} />
-      </div>
+      </div>}
     </section>
   );
 }
