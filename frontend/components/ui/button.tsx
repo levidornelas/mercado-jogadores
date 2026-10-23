@@ -6,5 +6,10 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ className, variant = "primary", ...props }: Props) {
-  return <button className={cn("ui-button", `ui-button-${variant}`, className)} {...props} />;
+  return (
+    <button
+      className={cn("ui-button", `ui-button-${variant}`, className)}
+      {...props}
+    />
+  );
 }
